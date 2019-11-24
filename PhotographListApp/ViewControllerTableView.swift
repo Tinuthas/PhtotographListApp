@@ -8,8 +8,11 @@
 
 import UIKit
 
-class ViewController: UIViewController {
 
+class ViewControllerTableView: UITableViewController {
+
+    private var listPhotograph: [Photograph] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -19,6 +22,8 @@ class ViewController: UIViewController {
                 photographs.forEach({ (photograph) in
                     print(photograph.author)
                 })
+                self.listPhotograph = photographs
+                self.tableView.reloadData()
             case .failure(let err):
                 print("Failed to fetch photographs:", err)
             }
@@ -59,6 +64,45 @@ class ViewController: UIViewController {
         }.resume()
         
     }
+    
+    fileprivate func setImageFromUrl(ImageURL :String, request: @escaping (Data) -> ()) {
+       URLSession.shared.dataTask( with: NSURL(string:ImageURL)! as URL, completionHandler: {
+          (data, response, error) -> Void in
+          DispatchQueue.main.async {
+             if let data = data {
+                request(data)
+             }
+        }
+       }).resume()
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return listPhotograph.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! TableViewCell
+            
+        print("Carregando Cell")
+        //cell.lazyImageView.image = UIImage(data:listPhotograph[indexPath.row].imageData!)
+        setImageFromUrl(ImageURL: listPhotograph[indexPath.row].download_url){(data) in
+            cell.lazyImageView.image = UIImage(data: data)
+            print("Deu")
+        }
+        
+        cell.lazyTextView.text = listPhotograph[indexPath.row].author
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 300
+    }
+
+    
 
 
 }
